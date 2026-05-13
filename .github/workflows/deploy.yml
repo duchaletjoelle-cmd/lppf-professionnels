@@ -1,0 +1,27 @@
+name: Deploy to IONOS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install lftp
+        run: sudo apt-get install -y lftp
+
+      - name: Deploy via SFTP to IONOS
+        run: |
+          lftp -c "
+          set sftp:auto-confirm yes
+          set net:timeout 20
+          set net:max-retries 3
+          open sftp://${{ secrets.IONOS_USER }}:${{ secrets.IONOS_PASS }}@${{ secrets.IONOS_HOST }}:22
+          mirror --reverse --delete --verbose --exclude=.git/ --exclude=.github/ --exclude=README.md . ./pro/
+          bye
+          "
